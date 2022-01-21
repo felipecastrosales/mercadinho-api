@@ -12,6 +12,11 @@ Parse.Cloud.define('get-product-list', async (request) => {
 		queryProducts.fullText('title', request.params.title);
 		// queryProducts.matches('title', '.*' + request.params.title + '.*');
 	}
+	if (request.params.categoryId != null) {
+		const category = new Category();
+		category.id = request.params.categoryId;
+		queryProducts.equalTo('category', category);
+	}
 	const itemsPerPage = request.params.itemsPerPage || 20;
 	if (itemsPerPage > 100) throw 'Invalid quantity of items per page';
 	queryProducts.skip(itemsPerPage * request.params.page || 0);
