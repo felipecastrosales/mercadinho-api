@@ -1,0 +1,12 @@
+Simulating the ".parse.local" file
+
+{
+  "applications": {
+    "_default": {
+      "link": "demo-parse"
+    },
+    "demo-parse": {
+      "applicationId": "addApplicationId"
+    }
+  }
+}
