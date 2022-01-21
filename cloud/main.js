@@ -15,6 +15,7 @@ Parse.Cloud.define('get-product-list', async (request) => {
 	if (itemsPerPage > 100) throw 'Invalid quantity of items per page';
 	queryProducts.skip(itemsPerPage * request.params.page || 0);
 	queryProducts.limit(itemsPerPage);
+	queryProducts.include('category');
 	const resultProducts = await queryProducts.find({useMasterKey: true});
 	return resultProducts.map(function(p){
 		p = p.toJSON();
@@ -25,6 +26,10 @@ Parse.Cloud.define('get-product-list', async (request) => {
 			price: p.price,
 			unit: p.unit,
 			picture: p.picture != null ? p.picture.url : null,
+			category: {
+				title: p.category.title,
+				id: p.category.objectId
+			},
 		}
 	});
 });
