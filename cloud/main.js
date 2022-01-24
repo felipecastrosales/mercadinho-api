@@ -99,7 +99,10 @@ Parse.Cloud.define('change-password', async (request) => {
 	if (user.id != request.user.id) throw 'INVALID_USER';
 	user.set('password', request.params.newPassword);
 	await user.save(null, {useMasterKey: true});
+});
 
+Parse.Cloud.define('reset-password', async (request) => {
+	await Parse.User.requestPasswordReset(request.params.email);
 });
 
 function formatUser(userJson) {
