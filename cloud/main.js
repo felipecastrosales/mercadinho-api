@@ -83,6 +83,15 @@ Parse.Cloud.define('login', async (request) => {
 	}
 });
 
+Parse.Cloud.define('validate-token', async (request) => {
+	// request.user...
+	try {
+		return formatUser(request.user.toJSON());
+	} catch (error) {
+		throw 'INVALID_TOKEN';
+	}
+});
+
 function formatUser(userJson) {
 	return {
 		id: userJson.objectId,
