@@ -92,6 +92,16 @@ Parse.Cloud.define('validate-token', async (request) => {
 	}
 });
 
+Parse.Cloud.define('change-password', async (request) => {
+	if (request.user == null) throw 'INVALID_USER';
+	request.user.set('');
+	const user = await Parse.User.logIn(request.params.email, request.params.currentPassword);
+	if (user.id != request.user.id) throw 'INVALID_USER';
+	user.set('password', request.params.newPassword);
+	await user.save(null, {useMasterKey: true});
+
+});
+
 function formatUser(userJson) {
 	return {
 		id: userJson.objectId,
