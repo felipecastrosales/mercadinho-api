@@ -1,6 +1,7 @@
 const Product = Parse.Object.extend('Product');
 const Category = Parse.Object.extend('Category');
 const User = Parse.Object.extend('User');
+const CartItem = Parse.Object.extend('CartItem');
 
 Parse.Cloud.define('hello', (request) => {
 	return 'Hello world from Mercadinho!';
@@ -104,6 +105,22 @@ Parse.Cloud.define('change-password', async (request) => {
 Parse.Cloud.define('reset-password', async (request) => {
 	await Parse.User.requestPasswordReset(request.params.email);
 });
+
+Parse.Cloud.define('add-item-to-cart', async (request) => {
+	if (request.params.quantity == null) throw 'INVALID_QUANTITY';
+	if (request.params.productId == null) throw 'INVALID_PRODUCT';
+	const cartItem = new CartItem();
+	cartItem.set('quantity', request.params.quantity);
+	const product = new Product();
+	product.id = request.params.productId;
+	cartItem.set('product', product);
+	cartItem.set('user', request.user);
+	const savedItem =  await cartItem.save(null, {useMasterKey: true});
+	return {
+		id: savedItem.id,
+	}
+});
+
 
 function formatUser(userJson) {
 	return {
