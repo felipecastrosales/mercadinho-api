@@ -67,15 +67,29 @@ Parse.Cloud.define('signup', async (request) => {
 	try {
 		const resultUser = await user.signUp(null, {useMasterKey: true});
 		const userJson = resultUser.toJSON();
-		return {
-			id: userJson.objectId,
-			fullName: userJson.fullName,
-			email: userJson.email,
-			phone: userJson.phone,
-			cpf: userJson.cpf,
-			token: userJson.sessionToken
-		}
+		return formatUser(userJson);
 	} catch (error) {
 		throw 'INVALID_DATA';
 	}
 });
+
+Parse.Cloud.define('login', async (request) => {
+	try {
+		const user = await Parse.User.logIn(request.params.email, request.params.password);
+		const userJson = user.toJSON();
+		return formatUser(userJson);
+	} catch (error) {
+		throw 'INVALID_CREDENTIALS';
+	}
+});
+
+function formatUser(userJson) {
+	return {
+		id: userJson.objectId,
+		fullName: userJson.fullName,
+		email: userJson.email,
+		phone: userJson.phone,
+		cpf: userJson.cpf,
+		token: userJson.sessionToken
+	}
+}
