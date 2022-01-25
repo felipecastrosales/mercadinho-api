@@ -28,7 +28,7 @@ Parse.Cloud.define('get-product-list', async (request) => {
 	queryProducts.include('category');
 	const resultProducts = await queryProducts.find({useMasterKey: true});
 	return resultProducts.map(function(p){
-		p = productJson.toJSON();
+		p = p.toJSON();
 		return formatProduct(p);
 	});
 });
@@ -154,11 +154,20 @@ Parse.Cloud.define('checkout', async (request) => {
 		item = item.toJSON();
 		total += item.quantity * item.product.price;
 	}
-	if (request.params.total != null) throw 'INVALID_TOTAL';
+	if (request.params.total != total) throw 'INVALID_TOTAL';
 	const order = new Order();
 	order.set('total', total);
 	order.set('user', request.user);
 	const saveOrder = await order.save(null, {useMasterKey: true});
+	for (let item of resultCartItems) {
+		const orderItem = new OrderItem();
+		orderItem.set('order', order);
+		orderItem.set('product', item.get('product'));
+		orderItem.set('quantity', item.get('quantity'));
+		orderItem.set('price', item.toJSON().product.price);
+		await orderItem.save(null, {useMasterKey: true});
+	}
+	await Parse.Object.destroyAll(resultCartItems, {useMasterKey: true});
 	return {
 		id: saveOrder.id
 	}
