@@ -26,19 +26,8 @@ Parse.Cloud.define('get-product-list', async (request) => {
 	queryProducts.include('category');
 	const resultProducts = await queryProducts.find({useMasterKey: true});
 	return resultProducts.map(function(p){
-		p = p.toJSON();
-		return {
-			id: p.objectId,
-			title: p.title,
-			description: p.description,
-			price: p.price,
-			unit: p.unit,
-			picture: p.picture != null ? p.picture.url : null,
-			category: {
-				title: p.category.title,
-				id: p.category.objectId
-			},
-		}
+		p = productJson.toJSON();
+		return formatProduct(p);
 	});
 });
 
@@ -134,6 +123,22 @@ Parse.Cloud.define('modify-item-quantity', async (request) => {
 	}
 });
 
+Parse.Cloud.define('get-cart-items', async (request) => {
+	const queryCartItems = new Parse.Query(CartItem);
+	queryCartItems.equalTo('user', request.user);
+	queryCartItems.include('product');
+	queryCartItems.include('product.category');
+	const resultCartItem = await queryCartItems.find({useMasterKey: true});
+	return resultCartItem.map(function (c){
+		c = c.toJSON();
+		return {
+			id: c.objectId,
+			quantity: c.quantity,
+			product: formatProduct(c.product),
+		}
+	});
+});
+
 function formatUser(userJson) {
 	return {
 		id: userJson.objectId,
@@ -142,5 +147,20 @@ function formatUser(userJson) {
 		phone: userJson.phone,
 		cpf: userJson.cpf,
 		token: userJson.sessionToken
+	}
+}
+
+function formatProduct(productJson) {
+	return {
+		id: productJson.objectId,
+		title: productJson.title,
+		description: productJson.description,
+		price: productJson.price,
+		unit: productJson.unit,
+		picture: productJson.picture != null ? productJson.picture.url : null,
+		category: {
+			title: productJson.category.title,
+			id: productJson.category.objectId
+		},
 	}
 }
