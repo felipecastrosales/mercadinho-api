@@ -162,6 +162,7 @@ Parse.Cloud.define('checkout', async (request) => {
 	for (let item of resultCartItems) {
 		const orderItem = new OrderItem();
 		orderItem.set('order', order);
+		orderItem.set('user', request.user);
 		orderItem.set('product', item.get('product'));
 		orderItem.set('quantity', item.get('quantity'));
 		orderItem.set('price', item.toJSON().product.price);
@@ -171,6 +172,43 @@ Parse.Cloud.define('checkout', async (request) => {
 	return {
 		id: saveOrder.id
 	}
+});
+
+Parse.Cloud.define('get-orders', async (request) => {
+	if (request.user == null) throw 'INVALID_USER';
+	const queryOrders = new Parse.Query(Order);
+	queryOrders.equalTo('user', request.user);
+	const resultOrders = await queryOrders.find({useMasterKey: true});
+	return resultOrders.map(function (o) {
+		o = o.toJSON();
+		return {
+			id: o.objectId,
+			total: o.total,
+			createdAt: o.createdAt,
+		}
+	});
+});
+
+Parse.Cloud.define('get-order-items', async (request) => {
+	if (request.user == null) throw 'INVALID_USER';
+	if (request.params.orderId == null) throw 'INVALID_ORDER';
+	const order = new Order();
+	order.id = request.params.orderId;
+	const queryOrdersItems = new Parse.Query(OrderItem);
+	queryOrdersItems.equalTo('order', order);
+	queryOrdersItems.equalTo('user', request.user);
+	queryOrdersItems.include('product');
+	queryOrdersItems.include('product.category');
+	const resultOrdersItems = await queryOrdersItems.find({useMasterKey: true});
+	return resultOrdersItems.map(function (o) {
+		o = o.toJSON();
+		return {
+			id: o.objectId,
+			quantity: o.quantity,
+			price: o.price,
+			product: formatProduct(o.product)
+		}
+	});
 });
 
 function formatUser(userJson) {
