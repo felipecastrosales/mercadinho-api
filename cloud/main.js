@@ -2,6 +2,8 @@ const Product = Parse.Object.extend('Product');
 const Category = Parse.Object.extend('Category');
 const User = Parse.Object.extend('User');
 const CartItem = Parse.Object.extend('CartItem');
+const Order = Parse.Object.extend('Order');
+const OrderItem = Parse.Object.extend('OrderItem');
 
 Parse.Cloud.define('hello', (request) => {
 	return 'Hello world from Mercadinho!';
@@ -96,6 +98,7 @@ Parse.Cloud.define('reset-password', async (request) => {
 });
 
 Parse.Cloud.define('add-item-to-cart', async (request) => {
+	if (request.user == null) throw 'INVALID_USER';
 	if (request.params.quantity == null) throw 'INVALID_QUANTITY';
 	if (request.params.productId == null) throw 'INVALID_PRODUCT';
 	const cartItem = new CartItem();
@@ -124,6 +127,7 @@ Parse.Cloud.define('modify-item-quantity', async (request) => {
 });
 
 Parse.Cloud.define('get-cart-items', async (request) => {
+	if (request.user == null) throw 'INVALID_USER';
 	const queryCartItems = new Parse.Query(CartItem);
 	queryCartItems.equalTo('user', request.user);
 	queryCartItems.include('product');
@@ -137,6 +141,27 @@ Parse.Cloud.define('get-cart-items', async (request) => {
 			product: formatProduct(c.product),
 		}
 	});
+});
+
+Parse.Cloud.define('checkout', async (request) => {
+	if (request.user == null) throw 'INVALID_USER';
+	const queryCartItems = new Parse.Query(CartItem);
+	queryCartItems.equalTo('user', request.user);
+	queryCartItems.include('product');
+	const resultCartItems = await queryCartItems.find({useMasterKey: true});
+	let total = 0;
+	for (let item of resultCartItems) {
+		item = item.toJSON();
+		total += item.quantity * item.product.price;
+	}
+	if (request.params.total != null) throw 'INVALID_TOTAL';
+	const order = new Order();
+	order.set('total', total);
+	order.set('user', request.user);
+	const saveOrder = await order.save(null, {useMasterKey: true});
+	return {
+		id: saveOrder.id
+	}
 });
 
 function formatUser(userJson) {
